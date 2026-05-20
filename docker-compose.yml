@@ -1,0 +1,82 @@
+# ====================================================================
+# DOCKER COMPOSE - Stack Backend ASM
+# Reference : Guide Section 4 (Deploying with Docker Compose)
+# Adapte pour MySQL (au lieu de PostgreSQL) et port 8089
+# ====================================================================
+
+services:
+
+  # =============================================================
+  # SERVICE 1 : Base de donnees MySQL
+  # =============================================================
+  mysql-db:
+    image: mysql:8.0
+    container_name: asm-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      # 3307 sur l'hote pour eviter conflit avec ton MySQL local sur 3306
+      - "3307:3306"
+    volumes:
+      # Volume persistant : les donnees survivent au redemarrage du conteneur
+      - mysql-data:/var/lib/mysql
+    networks:
+      - asm-network
+    healthcheck:
+      # Verifie que MySQL est VRAIMENT pret (pas juste demarre)
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  # =============================================================
+  # SERVICE 2 : Backend Spring Boot
+  # =============================================================
+  backend:
+    image: asm-backend:1.0
+    container_name: asm-backend
+    restart: unless-stopped
+    depends_on:
+      mysql-db:
+        # N'attend pas juste "demarre", mais "vraiment pret" (healthcheck OK)
+        condition: service_healthy
+    environment:
+      # Active le profil prod => utilise application-prod.properties
+      SPRING_PROFILES_ACTIVE: prod
+      # Variables MySQL lues par application-prod.properties
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      # Secrets JWT et Mail
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      # Dossier des uploads (volume mount)
+      UPLOAD_DIR: /app/uploads/cvs
+    ports:
+      - "8089:8089"
+    volumes:
+      # CRUCIAL : persiste les CV uploades hors du conteneur
+      # Sans ca, les CV sont perdus a chaque redemarrage !
+      - uploads-data:/app/uploads
+    networks:
+      - asm-network
+
+# ===== Volumes persistants =====
+volumes:
+  mysql-data:
+    name: asm-mysql-data
+  uploads-data:
+    name: asm-uploads-data
+
+# ===== Reseau prive entre conteneurs =====
+networks:
+  asm-network:
+    driver: bridge
+    name: asm-network

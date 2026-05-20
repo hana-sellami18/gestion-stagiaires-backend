@@ -1,0 +1,65 @@
+# ====================================================================
+# .DOCKERIGNORE - Fichiers exclus du contexte de build Docker
+# Reference : Guide Section 3 (Dockerfile Best Practices)
+# ====================================================================
+
+# ===== Artefacts de build Gradle =====
+build/
+.gradle/
+out/
+
+# ===== Cache et configuration IDE =====
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.settings/
+.project
+.classpath
+.factorypath
+
+# ===== Logs et temporaires =====
+*.log
+logs/
+tmp/
+temp/
+
+# ===== Git (l'historique n'a rien a faire dans l'image) =====
+.git/
+.gitignore
+.gitattributes
+
+# ===== Documentation =====
+README.md
+HELP.md
+CHANGELOG.md
+LICENSE
+docs/
+
+# ===== Variables d'environnement (CRITIQUE - jamais dans l'image !) =====
+.env
+.env.*
+*.env
+
+# ===== Uploads (les CV des stagiaires ne doivent JAMAIS etre dans l'image) =====
+uploads/
+
+# ===== Fichiers OS =====
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# ===== Tests (on skip deja les tests au build, pas besoin du code) =====
+src/test/
+
+# ===== Docker (pas besoin de se copier soi-meme) =====
+docker-compose.yml
+docker-compose.*.yml
+Dockerfile
+
+# ===== Autres =====
+node_modules/
+*.swp
+*.swo
+*~
