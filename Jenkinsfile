@@ -14,17 +14,9 @@ pipeline {
             }
         }
 
-        stage('Build JAR') {
-            steps {
-                echo '🔨 Compilation du projet Spring Boot...'
-                sh 'chmod +x ./gradlew'
-                sh './gradlew clean bootJar -x test'
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
-                echo '🐳 Construction de l\'image Docker...'
+                echo '🐳 Construction de l\'image Docker (Gradle compile dans le conteneur)...'
                 sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
                 sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest"
             }
